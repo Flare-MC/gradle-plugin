@@ -61,3 +61,7 @@ gradlePlugin {
         }
     }
 }
+
+tasks.named("build") {
+    finalizedBy("publishToMavenLocal")
+}

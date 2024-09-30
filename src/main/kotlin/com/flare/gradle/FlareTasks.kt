@@ -52,42 +52,65 @@ fun generateResources(project: Project, configuration: FlareConfiguration) {
 }
 
 fun generateCode(project: Project, configuration: FlareConfiguration) {
-    for (platform in configuration.platforms) {
-        val main =
-            configuration.entrypoint.substringBeforeLast(".") + ".platform." + platform.type.displayName + "Entry"
-        // Generate Kotlin file
-        val generatedDir =
-            File(project.buildDir, "generated/sources/" + main.replace(".", "/").substringBeforeLast("/"))
-        generatedDir.mkdirs()
+    val mainPackage = configuration.entrypoint.substringBeforeLast(".") + ".platform"
+    val generatedDir =
+        File(project.buildDir, "generated/sources/" + mainPackage.replace(".", "/"))
+    generatedDir.mkdirs()
 
-        val `package` = main.substringBeforeLast(".")
+    for (platform in configuration.platforms) {
         val className = "${platform.type.displayName}Entry"
         val entryFile = File(generatedDir, "$className.java")
         if (platform.type == FlarePlatformType.SPIGOT || platform.type == FlarePlatformType.BUNGEECORD) {
             entryFile.writeText(
                 """
-                    package $`package`;
+                    package $mainPackage;
 
                     import ${if (platform.type == FlarePlatformType.BUNGEECORD) "net.md_5.bungee.api.plugin.Plugin" else "org.bukkit.plugin.java.JavaPlugin"};
-                    import com.flare.sdk.platform.${platform.type.displayName}Platform;
+                    ${if (platform.type == FlarePlatformType.SPIGOT) "import org.bukkit.Bukkit;\n" else ""}                    import com.flare.sdk.platform.Platform;
+                    import com.flare.sdk.platform.PlatformType;
                     import com.flare.sdk.Flare;
+                    import org.jetbrains.annotations.NotNull;
 
-                    public class $className extends ${if (platform.type == FlarePlatformType.SPIGOT) "Java" else ""}Plugin implements ${platform.type.displayName}Platform {
+                    public class $className extends ${if (platform.type == FlarePlatformType.SPIGOT) "Java" else ""}Plugin implements Platform {
+
+                        private final Flare flare;
+
+                        public $className() {
+                            Flare flare = null;
+                            try {
+                                Class<?> entry = Class.forName("${configuration.entrypoint}");
+                                flare = new Flare(this, entry);
+                            } catch (Exception e) {
+                                ${if (platform.type == FlarePlatformType.BUNGEECORD) "" else "Bukkit.getPluginManager().disablePlugin(this);"}
+                            }
+
+                            this.flare = flare;
+                        }
+
+                        @Override @NotNull
+                        public PlatformType getPlatformType() {
+                            return PlatformType.${platform.type.name};
+                        }
 
                         @Override
                         public void onLoad() {
-                            Flare.getInstance().setPlatform(this);
-                            Flare.getInstance().onLoad();
+                            if (flare == null) return;
+
+                            this.flare.onLoad();
                         }
 
                         @Override
                         public void onEnable() {
-                            Flare.getInstance().onEnable();
+                            if (flare == null) return;
+
+                            this.flare.onEnable();
                         }
 
                         @Override
                         public void onDisable() {
-                            Flare.getInstance().onDisable();
+                            if (flare == null) return;
+
+                            this.flare.onDisable();
                         }
                     }
                 """.trimIndent()
@@ -103,20 +126,24 @@ fun generateCode(project: Project, configuration: FlareConfiguration) {
 
             entryFile.writeText(
                 """
-                    package $`package`;
+                    package $mainPackage;
 
                     import com.google.inject.Inject;
                     import com.velocitypowered.api.plugin.Plugin;
                     import com.velocitypowered.api.proxy.ProxyServer;
                     import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
                     import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+                    import com.velocitypowered.api.event.Subscribe;
                     import org.slf4j.Logger;
-                    import com.flare.sdk.platform.VelocityPlatform;
+                    import com.flare.sdk.platform.Platform;
+                    import com.flare.sdk.platform.PlatformType;
                     import com.flare.sdk.Flare;
+                    import org.jetbrains.annotations.NotNull;
 
                     @Plugin(id = "${configuration.name}", name = "${configuration.name}", version = "${configuration.version}", description = "${configuration.description}", url = "${configuration.website}", dependencies = ${dependencies.joinToString(prefix = "{", postfix = "}", separator = ", ") })
-                    public class $className implements VelocityPlatform {
+                    public class $className implements Platform {
 
+                        private final Flare flare;
                         private final ProxyServer server;
                         private final Logger logger;
 
@@ -124,18 +151,33 @@ fun generateCode(project: Project, configuration: FlareConfiguration) {
                         public $className(ProxyServer server, Logger logger) {
                             this.server = server;
                             this.logger = logger;
+                            Flare flare = null;
+                            try {
+                                Class<?> entry = Class.forName("${configuration.entrypoint}");
+                                flare = new Flare(this, entry);
+                            } catch (Exception ignored) { }
+
+                            this.flare = flare;
+                        }
+
+                        @Override @NotNull
+                        public PlatformType getPlatformType() {
+                            return PlatformType.${platform.type.name};
                         }
 
                         @Subscribe
                         public void onProxyInitialization(ProxyInitializeEvent event) {
-                            Flare.getInstance().setPlatform(this);
-                            Flare.getInstance().onLoad();
-                            Flare.getInstance().onEnable();
+                            if (flare == null) return;
+
+                            flare.onLoad();
+                            flare.onEnable();
                         }
 
                         @Subscribe
                         public void onProxyShutdown(ProxyShutdownEvent event) {
-                            Flare.getInstance().onDisable();
+                            if (flare == null) return;
+
+                            flare.onDisable();
                         }
                     }
                 """.trimIndent()
