@@ -38,8 +38,8 @@ data class FlareConfiguration(
 
 data class FlarePlatform(val type: FlarePlatformType, val dependency: String)
 
-enum class FlarePlatformType(val displayName: String) {
-    SPIGOT("Spigot"),
-    BUNGEECORD("BungeeCord"),
-    VELOCITY("Velocity")
+enum class FlarePlatformType(val displayName: String, val repository: String) {
+    SPIGOT("Spigot", "https://hub.spigotmc.org/nexus/content/repositories/snapshots"),
+    BUNGEECORD("BungeeCord", "https://oss.sonatype.org/content/repositories/snapshots"),
+    VELOCITY("Velocity", "https://repo.papermc.io/repository/maven-public/")
 }
