@@ -98,8 +98,8 @@ fun generateCode(project: Project, configuration: FlareConfiguration) {
                         public $className() {
                             Flare flare = null;
                             try {
-                                Class<?> entry = ${configuration.entrypoint}.class;
                                 FlareConfiguration configuration = new FlareConfiguration(
+                                    ${configuration.entrypoint}.class,
                                     "${configuration.name}",
                                     "${configuration.description}",
                                     "${configuration.version}",
@@ -109,7 +109,7 @@ fun generateCode(project: Project, configuration: FlareConfiguration) {
                                     PlatformUtil.convertToList("${configuration.optionalDependencies}")
                                 );
 
-                                flare = new Flare(this, entry, configuration);
+                                flare = new Flare(this, configuration);
                             } catch (Exception e) {
                                 ${if (platform.type == FlarePlatformType.BUNGEECORD) "" else "Bukkit.getPluginManager().disablePlugin(this);"}
                             }
@@ -191,23 +191,18 @@ fun generateCode(project: Project, configuration: FlareConfiguration) {
                             this.server = server;
                             this.logger = logger;
                             this.dataFolder = dataDirectory;
-                            Flare flare = null;
-                            try {
-                                Class<?> entry = ${configuration.entrypoint}.class;
-                                FlareConfiguration configuration = new FlareConfiguration(
-                                    "${configuration.name}",
-                                    "${configuration.description}",
-                                    "${configuration.version}",
-                                    "${configuration.website}",
-                                    PlatformUtil.convertToList("${configuration.authors}"),
-                                    PlatformUtil.convertToList("${configuration.dependencies}"),
-                                    PlatformUtil.convertToList("${configuration.optionalDependencies}")
-                                );
+                            FlareConfiguration configuration = new FlareConfiguration(
+                                ${configuration.entrypoint}.class,
+                                "${configuration.name}",
+                                "${configuration.description}",
+                                "${configuration.version}",
+                                "${configuration.website}",
+                                PlatformUtil.convertToList("${configuration.authors}"),
+                                PlatformUtil.convertToList("${configuration.dependencies}"),
+                                PlatformUtil.convertToList("${configuration.optionalDependencies}")
+                            );
 
-                                flare = new Flare(this, entry, configuration);
-                            } catch (Exception ignored) { }
-
-                            this.flare = flare;
+                            this.flare = new Flare(this, configuration);
                         }
 
                         @Override @NotNull
