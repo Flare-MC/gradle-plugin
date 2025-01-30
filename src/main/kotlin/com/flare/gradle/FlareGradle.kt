@@ -61,11 +61,13 @@ class FlareGradle : Plugin<Project> {
             project.getClass(entryPoint) ?:
             throw GradleException("The entry point class doesn't exists!")
 
-            project.dependencies.add("implementation", "com.flare:sdk:$sdkVersion")
-            configuration.platforms.forEach { project.repositories.maven {
-                this.name = it.type.name.lowercase()
-                setUrl(it.type.repository)
-            } }
+            configuration.platforms.forEach {
+                project.dependencies.add("implementation", "com.flare.sdk:${it.type.sdkName}:$sdkVersion")
+                project.repositories.maven {
+                    this.name = it.type.name.lowercase()
+                    setUrl(it.type.repository)
+                }
+            }
 
             configuration.platforms.forEach { project.dependencies.add("compileOnly", it.dependency) }
 
