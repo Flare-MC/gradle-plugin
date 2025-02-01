@@ -203,6 +203,7 @@ fun generateCode(project: Project, configuration: FlareConfiguration) {
                             );
 
                             this.flare = new Flare(this, configuration);
+                            this.flare.onLoad();
                         }
 
                         @Override @NotNull
@@ -219,7 +220,6 @@ fun generateCode(project: Project, configuration: FlareConfiguration) {
                         public void onProxyInitialization(ProxyInitializeEvent event) {
                             if (flare == null) return;
 
-                            flare.onLoad();
                             flare.onEnable();
                         }
 
