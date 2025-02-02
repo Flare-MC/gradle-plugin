@@ -32,7 +32,7 @@ publishing {
 
             pom {
                 name.set("Flare Gradle Plugin")
-                description.set("Flare Flamework's gradle plugin")
+                description.set("Flare Framework's gradle plugin")
             }
         }
     }
@@ -47,6 +47,8 @@ dependencies {
 
     // Gradle API dependencies
     implementation(gradleApi())
+
+    implementation("com.google.code.gson:gson:2.12.1")
 }
 
 gradlePlugin {

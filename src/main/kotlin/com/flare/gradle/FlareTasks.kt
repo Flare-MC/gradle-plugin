@@ -2,7 +2,10 @@ package com.flare.gradle
 
 import com.flare.gradle.configuration.FlareConfiguration
 import com.flare.gradle.configuration.FlarePlatformType
+import com.flare.gradle.`object`.VelocityDependency
 import org.gradle.api.Project
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import java.io.File
@@ -47,6 +50,24 @@ fun generateResources(project: Project, configuration: FlareConfiguration) {
             configFile.writer().use { writer ->
                 yaml.dump(pluginConfig, writer)
             }
+        } else if (platform.type == FlarePlatformType.VELOCITY) {
+
+            val gson: Gson = GsonBuilder().create()
+            val pluginConfig = mutableMapOf(
+                "main" to main,
+                "id" to configuration.name,
+                "name" to configuration.name,
+                "version" to configuration.version,
+                "description" to configuration.description,
+                "authors" to configuration.authors.toMutableList(),
+                "dependencies" to (configuration.dependencies.toMutableList().map { VelocityDependency(it) } + (configuration.optionalDependencies.toMutableList().map { VelocityDependency(it, true) })),
+                "url" to configuration.website,
+            )
+
+            val outFile = File(resourcesDir, "velocity-plugin.json")
+            val jsonOutput = gson.toJson(pluginConfig)
+
+            outFile.writeText(jsonOutput)
         }
     }
 }
